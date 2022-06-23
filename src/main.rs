@@ -18,9 +18,150 @@ trait Typed {
 
 
 #[derive(Clone, Debug)]
+enum Numeric {
+    UInt8(u8),
+    UInt16(u16),
+    UInt32(u32),
+    UInt64(u64),
+    UInt128(u128),
+    Int8(i8),
+    Int16(i16),
+    Int32(i32),
+    Int64(i64),
+    Int128(i128),
+    Float32(f32),
+    Float64(f64),
+    USize(usize),
+    ISize(isize),
+}
+
+
+macro_rules! impl_math {
+    ($name:ident, $op:tt) => {
+        pub fn $name(&self, rhs: &Self) -> Self {
+            match (self, rhs) {
+                (Numeric::UInt8(a),   Numeric::UInt8(b)  ) => Numeric::UInt8(a $op b),
+                (Numeric::UInt16(a),  Numeric::UInt16(b) ) => Numeric::UInt16(a $op b),
+                (Numeric::UInt32(a),  Numeric::UInt32(b) ) => Numeric::UInt32(a $op b),
+                (Numeric::UInt64(a),  Numeric::UInt64(b) ) => Numeric::UInt64(a $op b),
+                (Numeric::UInt128(a), Numeric::UInt128(b)) => Numeric::UInt128(a $op b),
+                (Numeric::Int8(a),    Numeric::Int8(b)   ) => Numeric::Int8(a $op b),
+                (Numeric::Int16(a),   Numeric::Int16(b)  ) => Numeric::Int16(a $op b),
+                (Numeric::Int32(a),   Numeric::Int32(b)  ) => Numeric::Int32(a $op b),
+                (Numeric::Int64(a),   Numeric::Int64(b)  ) => Numeric::Int64(a $op b),
+                (Numeric::Float32(a), Numeric::Float32(b)) => Numeric::Float32(a $op b),
+                (Numeric::Float64(a), Numeric::Float64(b)) => Numeric::Float64(a $op b),
+                (Numeric::USize(a),   Numeric::USize(b)  ) => Numeric::USize(a $op b),
+                (Numeric::ISize(a),   Numeric::ISize(b)  ) => Numeric::ISize(a $op b),
+                _ => panic!("LHS and RHS not matching")
+            }
+        }
+    }
+}
+
+
+macro_rules! impl_cmp {
+    ($name:ident, $op:tt) => {
+        pub fn $name(&self, rhs: &Self) -> Value {
+            match (self, rhs) {
+                (Numeric::UInt8(a),   Numeric::UInt8(b)  ) => Value::Bool(a $op b),
+                (Numeric::UInt16(a),  Numeric::UInt16(b) ) => Value::Bool(a $op b),
+                (Numeric::UInt32(a),  Numeric::UInt32(b) ) => Value::Bool(a $op b),
+                (Numeric::UInt64(a),  Numeric::UInt64(b) ) => Value::Bool(a $op b),
+                (Numeric::UInt128(a), Numeric::UInt128(b)) => Value::Bool(a $op b),
+                (Numeric::Int8(a),    Numeric::Int8(b)   ) => Value::Bool(a $op b),
+                (Numeric::Int16(a),   Numeric::Int16(b)  ) => Value::Bool(a $op b),
+                (Numeric::Int32(a),   Numeric::Int32(b)  ) => Value::Bool(a $op b),
+                (Numeric::Int64(a),   Numeric::Int64(b)  ) => Value::Bool(a $op b),
+                (Numeric::Float32(a), Numeric::Float32(b)) => Value::Bool(a $op b),
+                (Numeric::Float64(a), Numeric::Float64(b)) => Value::Bool(a $op b),
+                (Numeric::USize(a),   Numeric::USize(b)  ) => Value::Bool(a $op b),
+                (Numeric::ISize(a),   Numeric::ISize(b)  ) => Value::Bool(a $op b),
+                _ => panic!("LHS and RHS not matching")
+            }
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+enum NumericType {
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float32,
+    Float64,
+    USize,
+    ISize,
+}
+
+
+macro_rules! cast {
+    ($to:ident, $value:ident) => {
+        match $to {
+            NumericType::UInt8   => Numeric::UInt8($value as u8),
+            NumericType::UInt16  => Numeric::UInt16($value as u16),
+            NumericType::UInt32  => Numeric::UInt32($value as u32),
+            NumericType::UInt64  => Numeric::UInt64($value as u64),
+            NumericType::UInt128 => Numeric::UInt128($value as u128),
+            NumericType::Int8    => Numeric::Int8($value as i8),
+            NumericType::Int16   => Numeric::Int16($value as i16),
+            NumericType::Int32   => Numeric::Int32($value as i32),
+            NumericType::Int64   => Numeric::Int64($value as i64),
+            NumericType::Int128  => Numeric::Int128($value as i128),
+            NumericType::Float32 => Numeric::Float32($value as f32),
+            NumericType::Float64 => Numeric::Float64($value as f64),
+            NumericType::USize   => Numeric::USize($value as usize),
+            NumericType::ISize   => Numeric::ISize($value as isize),
+        }
+    }
+}
+
+
+impl Numeric {
+    impl_math!(add, +);
+    impl_math!(sub, -);
+    impl_math!(mul, *);
+    impl_math!(div, /);
+    impl_cmp!(greater_than, >);
+    impl_cmp!(greater_than_eq, >=);
+    impl_cmp!(less_than, <);
+    impl_cmp!(less_than_eq, <=);
+    impl_cmp!(eq, ==);
+
+    fn cast(self, to: &NumericType) -> Numeric {
+        match self {
+            Numeric::UInt8(a)   => { return cast!(to, a); },
+            Numeric::UInt16(a)  => { return cast!(to, a); },
+            Numeric::UInt32(a)  => { return cast!(to, a); },
+            Numeric::UInt64(a)  => { return cast!(to, a); },
+            Numeric::UInt128(a) => { return cast!(to, a); },
+            Numeric::Int8(a)    => { return cast!(to, a); },
+            Numeric::Int16(a)   => { return cast!(to, a); },
+            Numeric::Int32(a)   => { return cast!(to, a); },
+            Numeric::Int64(a)   => { return cast!(to, a); },
+            Numeric::Int128(a)  => { return cast!(to, a); },
+            Numeric::Float32(a) => { return cast!(to, a); },
+            Numeric::Float64(a) => { return cast!(to, a); },
+            Numeric::USize(a)   => { return cast!(to, a); },
+            Numeric::ISize(a)   => { return cast!(to, a); },
+
+        };
+    }
+}
+
+
+#[derive(Clone, Debug)]
 enum Value {
     Str(String),
-    Int32(i32),
+    Numeric(Numeric),
     Bool(bool)
 }
 
@@ -29,7 +170,7 @@ impl Typed for Value {
     fn get_type(&self) -> DataType {
         match self {
             Value::Str(_) => DataType::Str,
-            Value::Int32(_) => DataType::Int32,
+            Value::Numeric(_) => DataType::Int32,
             Value::Bool(_) => DataType::Bool
         }
     }
@@ -99,7 +240,8 @@ trait Runnable {
 #[derive(Debug)]
 enum Instruction {
     Math(MathOp),
-    Stack(StackOp)
+    Stack(StackOp),
+    Type(TypeOp)
 }
 
 
@@ -113,7 +255,7 @@ enum MathOp {
     LessThan,
     GreaterThanEq,
     LessThanEq,
-    Eql
+    Eql,
 }
 
 
@@ -124,22 +266,48 @@ impl Runnable for MathOp {
         let b = current_stack.pop().unwrap();
         let a = current_stack.pop().unwrap();
 
-        if let (Value::Int32(a), Value::Int32(b)) = (a, b) {
+        if let (Value::Numeric(a), Value::Numeric(b)) = (a, b) {
             match self {
-                MathOp::Add           => current_stack.push(Value::Int32(a + b)),
-                MathOp::Sub           => current_stack.push(Value::Int32(a - b)),
-                MathOp::Mul           => current_stack.push(Value::Int32(a * b)),
-                MathOp::Div           => current_stack.push(Value::Int32(a / b)),
-                MathOp::GreaterThan   => current_stack.push(Value::Bool(a < b)),
-                MathOp::LessThan      => current_stack.push(Value::Bool(a > b)),
-                MathOp::GreaterThanEq => current_stack.push(Value::Bool(a <= b)),
-                MathOp::LessThanEq    => current_stack.push(Value::Bool(a >= b)),
-                MathOp::Eql           => current_stack.push(Value::Bool(a == b))
+                MathOp::Add           => current_stack.push(Value::Numeric(a.add(&b))),
+                MathOp::Sub           => current_stack.push(Value::Numeric(a.sub(&b))),
+                MathOp::Mul           => current_stack.push(Value::Numeric(a.mul(&b))),
+                MathOp::Div           => current_stack.push(Value::Numeric(a.div(&b))),
+                MathOp::GreaterThan   => current_stack.push(a.greater_than(&b)),
+                MathOp::LessThan      => current_stack.push(a.less_than(&b)),
+                MathOp::GreaterThanEq => current_stack.push(a.greater_than_eq(&b)),
+                MathOp::LessThanEq    => current_stack.push(a.less_than_eq(&b)),
+                MathOp::Eql           => current_stack.push(a.eq(&b)),
+                
             };
         } else {
             panic!("A or B of MathOp is not a number");
         }
 
+    }
+}
+
+
+#[derive(Debug)]
+enum TypeOp {
+    NumericCast(NumericType)
+}
+
+
+impl Runnable for TypeOp {
+    fn run(&self, stack: &mut Stack) {
+        let current_stack = stack.current();
+
+        match self {
+            TypeOp::NumericCast(to) => {
+                let end = current_stack.pop().unwrap();
+
+                if let Value::Numeric(end) = end {
+                    current_stack.push(Value::Numeric(end.cast(to)))
+                } else {
+                    panic!("Can't perform cast on non-numeric type");
+                }
+            }
+        }
     }
 }
 
@@ -151,7 +319,8 @@ enum StackOp {
     Pop(Ptr),
     Push(ValueType),
     SubStack,
-    Destack
+    Destack,
+    Len
 }
 
 
@@ -181,6 +350,7 @@ impl Runnable for StackOp {
             },
             StackOp::SubStack => { stack.substack(); },
             StackOp::Destack => { stack.destack(); },
+            StackOp::Len => { current_stack.push(Value::Numeric(Numeric::USize(current_stack.len()))) }
         };
     }
 }
@@ -191,69 +361,20 @@ impl Runnable for Instruction {
         match self {
             Instruction::Math(instr) => instr.run(stack),
             Instruction::Stack(instr) => instr.run(stack),
+            Instruction::Type(instr) => instr.run(stack),
         }
     }
 }
 
 
-trait Valuable {
-    fn to_value(self) -> Value;
-}
-
-
-trait Ptrable {
-    fn to_pointer(self) -> Ptr;
-}
-
-
-impl Valuable for i32 {
-    fn to_value(self) -> Value {
-        Value::Int32(self)
-    }
-}
-
-
-impl Valuable for bool {
-    fn to_value(self) -> Value {
-        Value::Bool(self)
-    }
-}
-
-
-impl Valuable for String {
-    fn to_value(self) -> Value {
-        Value::Str(self)
-    }
-}
-
-impl Ptrable for i32 {
-    fn to_pointer(self) -> Ptr {
-        Ptr::new(Value::Int32(self))
-    }
-}
-
-
-impl Ptrable for bool {
-    fn to_pointer(self) -> Ptr {
-        Ptr::new(Value::Bool(self))
-    }
-}
-
-
-impl Ptrable for String {
-    fn to_pointer(self) -> Ptr {
-        Ptr::new(Value::Str(self))
-    }
-}
-
-
 fn main() {
-    let ptr = 0.to_pointer();
+    let ptr = Ptr::new(Value::Numeric(Numeric::Int8(0)));
 
     let instructions: Vec<Instruction> = vec![
-        Instruction::Stack(StackOp::Push(ValueType::Value(Value::Int32(2)))),
-        Instruction::Stack(StackOp::Push(ValueType::Value(Value::Int32(3)))),
-        Instruction::Math(MathOp::Add),
+        Instruction::Stack(StackOp::Push(ValueType::Value(Value::Numeric(Numeric::Float32(3.0))))),
+        Instruction::Stack(StackOp::Push(ValueType::Value(Value::Numeric(Numeric::Float32(0.5))))),
+        Instruction::Math(MathOp::Mul),
+        Instruction::Type(TypeOp::NumericCast(NumericType::Int8)),
         Instruction::Stack(StackOp::Pop(ptr.clone()))
     ];
 
