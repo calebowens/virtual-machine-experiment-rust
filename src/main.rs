@@ -257,11 +257,14 @@ impl Stack {
     }
 
     fn substack(&mut self, carry_count: usize) {
-        self.stacks.push(Rc::new(RefCell::new(vec![])));
+        let last_items = self.current().borrow().iter().rev().take(carry_count).cloned().collect();
+        self.stacks.push(Rc::new(RefCell::new(last_items)));
     }
 
     fn destack(&mut self, carry_count: usize) {
+        let mut last_items = self.current().borrow().iter().rev().take(carry_count).cloned().collect();
         self.stacks.pop();
+        self.current().borrow_mut().append(&mut last_items);
     }
 }
 
