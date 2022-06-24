@@ -125,6 +125,28 @@ macro_rules! cast {
 }
 
 
+macro_rules! cast_to_value {
+    ($from:ident, $to:tt) => {
+        match $from {
+            Numeric::UInt8(a)   => a as $to,
+            Numeric::UInt16(a)  => a as $to,
+            Numeric::UInt32(a)  => a as $to,
+            Numeric::UInt64(a)  => a as $to,
+            Numeric::UInt128(a) => a as $to,
+            Numeric::Int8(a)    => a as $to,
+            Numeric::Int16(a)   => a as $to,
+            Numeric::Int32(a)   => a as $to,
+            Numeric::Int64(a)   => a as $to,
+            Numeric::Int128(a)  => a as $to,
+            Numeric::Float32(a) => a as $to,
+            Numeric::Float64(a) => a as $to,
+            Numeric::USize(a)   => a as $to,
+            Numeric::ISize(a)   => a as $to,
+        }
+    }
+}
+
+
 impl Numeric {
     impl_math!(add, +);
     impl_math!(sub, -);
@@ -152,7 +174,6 @@ impl Numeric {
             Numeric::Float64(a) => { return cast!(to, a); },
             Numeric::USize(a)   => { return cast!(to, a); },
             Numeric::ISize(a)   => { return cast!(to, a); },
-
         };
     }
 }
@@ -206,27 +227,40 @@ enum ValueType {
     StackValue
 }
 
+impl ValueType {
+    fn to_value(&self, stack: &mut Stack) -> Value {
+        match self {
+            ValueType::Ptr(ptr) => ptr.value.borrow().clone(),
+            ValueType::Value(value) => value.clone(),
+            ValueType::StackValue => stack.current().borrow().last().unwrap().clone()
+        }
+    }
+}
+
+
+type SubStack = Rc<RefCell<Vec<Value>>>;
+
 
 #[derive(Debug)]
 struct Stack {
-    stacks: Vec<Vec<Value>>
+    stacks: Vec<SubStack>
 }
 
 
 impl Stack {
     fn new() -> Stack {
-        Stack { stacks: vec![vec![]] }
+        Stack { stacks: vec![Rc::new(RefCell::new(vec![]))] }
     }
 
-    fn current(&mut self) -> &mut Vec<Value> {
-        self.stacks.last_mut().unwrap()
+    fn current(&mut self) -> SubStack {
+        self.stacks.last_mut().unwrap().clone()
     }
 
-    fn substack(&mut self) {
-        self.stacks.push(vec![]);
+    fn substack(&mut self, carry_count: usize) {
+        self.stacks.push(Rc::new(RefCell::new(vec![])));
     }
 
-    fn destack(&mut self) {
+    fn destack(&mut self, carry_count: usize) {
         self.stacks.pop();
     }
 }
@@ -263,6 +297,8 @@ impl Runnable for MathOp {
     fn run(&self, stack: &mut Stack) {
         let current_stack = stack.current();
 
+        let mut current_stack = current_stack.borrow_mut();
+
         let b = current_stack.pop().unwrap();
         let a = current_stack.pop().unwrap();
 
@@ -297,6 +333,8 @@ impl Runnable for TypeOp {
     fn run(&self, stack: &mut Stack) {
         let current_stack = stack.current();
 
+        let mut current_stack = current_stack.borrow_mut();
+
         match self {
             TypeOp::NumericCast(to) => {
                 let end = current_stack.pop().unwrap();
@@ -318,8 +356,8 @@ enum StackOp {
     Duplicate,
     Pop(Ptr),
     Push(ValueType),
-    SubStack,
-    Destack,
+    SubStack(ValueType),
+    Destack(ValueType),
     Len
 }
 
@@ -330,27 +368,44 @@ impl Runnable for StackOp {
 
         match self {
             StackOp::Swap => {
+                let mut current_stack = current_stack.borrow_mut();
+
                 let len = current_stack.len();
                 let tmp = current_stack[len - 1].clone();
                 current_stack[len - 1] = current_stack[len - 2].clone();
                 current_stack[len - 2] = tmp;
             },
             StackOp::Duplicate => {
-                current_stack.push(current_stack.last().unwrap().clone());
+                current_stack.borrow_mut().push(current_stack.borrow().last().unwrap().clone());
             },
             StackOp::Pop(ptr) => {
-                ptr.value.replace(current_stack.pop().unwrap());
+                ptr.value.replace(current_stack.borrow_mut().pop().unwrap());
             },
             StackOp::Push(value) => {
-                match value {
-                    ValueType::Ptr(ptr) => current_stack.push(ptr.value.borrow().clone()),
-                    ValueType::Value(value) => current_stack.push(value.clone()),
-                    ValueType::StackValue => current_stack.push(current_stack.last().unwrap().clone())
-                };
+                current_stack.borrow_mut().push(value.to_value(stack));
             },
-            StackOp::SubStack => { stack.substack(); },
-            StackOp::Destack => { stack.destack(); },
-            StackOp::Len => { current_stack.push(Value::Numeric(Numeric::USize(current_stack.len()))) }
+            StackOp::SubStack(value) => { 
+                let value = value.to_value(stack);
+
+                if let Value::Numeric(value) = value {
+                    stack.substack(cast_to_value!(value, usize)); 
+                } else {
+                    panic!("SubStack argument can't be non-Numeric")
+                }
+                
+            },
+            StackOp::Destack(value) => { 
+                let value = value.to_value(stack);
+
+                if let Value::Numeric(value) = value {
+                    stack.destack(cast_to_value!(value, usize)); 
+                } else {
+                    panic!("SubStack argument can't be non-Numeric")
+                }
+            },
+            StackOp::Len => { 
+                current_stack.borrow_mut().push(Value::Numeric(Numeric::USize(current_stack.borrow().len()))) 
+            }
         };
     }
 }
