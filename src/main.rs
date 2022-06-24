@@ -8,7 +8,8 @@ use std::cell::RefCell;
 enum DataType {
     Str,
     Int32,
-    Bool
+    Bool,
+    Ptr
 }
 
 
@@ -183,7 +184,8 @@ impl Numeric {
 enum Value {
     Str(String),
     Numeric(Numeric),
-    Bool(bool)
+    Bool(bool),
+    Ptr(Ptr)
 }
 
 
@@ -192,7 +194,8 @@ impl Typed for Value {
         match self {
             Value::Str(_) => DataType::Str,
             Value::Numeric(_) => DataType::Int32,
-            Value::Bool(_) => DataType::Bool
+            Value::Bool(_) => DataType::Bool,
+            Value::Ptr(_) => DataType::Ptr
         }
     }
 }
@@ -224,15 +227,15 @@ impl Typed for Ptr {
 enum ValueType {
     Ptr(Ptr),
     Value(Value),
-    StackValue
+    StackValue,
 }
 
 impl ValueType {
-    fn to_value(&self, stack: &mut Stack) -> Value {
+    fn to_value(&self, last_stack_value: Value) -> Value {
         match self {
             ValueType::Ptr(ptr) => ptr.value.borrow().clone(),
             ValueType::Value(value) => value.clone(),
-            ValueType::StackValue => stack.current().borrow().last().unwrap().clone()
+            ValueType::StackValue => last_stack_value
         }
     }
 }
@@ -359,6 +362,8 @@ enum StackOp {
     Duplicate,
     Pop(Ptr),
     Push(ValueType),
+    PushPtr(Ptr),
+    DeRef,
     SubStack(ValueType),
     Destack(ValueType),
     Len
@@ -385,10 +390,26 @@ impl Runnable for StackOp {
                 ptr.value.replace(current_stack.borrow_mut().pop().unwrap());
             },
             StackOp::Push(value) => {
-                current_stack.borrow_mut().push(value.to_value(stack));
+                let value = value.to_value(current_stack.borrow().last().unwrap().clone());
+
+                current_stack.borrow_mut().push(value);
+            },
+            StackOp::PushPtr(ptr) => {
+                current_stack.borrow_mut().push(Value::Ptr(ptr.clone()))
+            },
+            StackOp::DeRef => {
+                let mut current_stack = current_stack.borrow_mut();
+
+                let value = current_stack.pop().unwrap();
+
+                if let Value::Ptr(value) = value {
+                    current_stack.push(value.value.borrow().clone());
+                } else {
+                    panic!("Can't DeRef a non-ptr");
+                }
             },
             StackOp::SubStack(value) => { 
-                let value = value.to_value(stack);
+                let value = value.to_value(current_stack.borrow().last().unwrap().clone());
 
                 if let Value::Numeric(value) = value {
                     stack.substack(cast_to_value!(value, usize)); 
@@ -398,7 +419,7 @@ impl Runnable for StackOp {
                 
             },
             StackOp::Destack(value) => { 
-                let value = value.to_value(stack);
+                let value = value.to_value(current_stack.borrow().last().unwrap().clone());
 
                 if let Value::Numeric(value) = value {
                     stack.destack(cast_to_value!(value, usize)); 
@@ -427,13 +448,11 @@ impl Runnable for Instruction {
 
 fn main() {
     let ptr = Ptr::new(Value::Numeric(Numeric::Int8(0)));
+    let ptr_ptr = Ptr::new(Value::Ptr(Ptr::new(Value::Numeric(Numeric::Int8(1)))));
 
     let instructions: Vec<Instruction> = vec![
-        Instruction::Stack(StackOp::Push(ValueType::Value(Value::Numeric(Numeric::Float32(3.0))))),
-        Instruction::Stack(StackOp::Push(ValueType::Value(Value::Numeric(Numeric::Float32(0.5))))),
-        Instruction::Math(MathOp::Mul),
-        Instruction::Type(TypeOp::NumericCast(NumericType::Int8)),
-        Instruction::Stack(StackOp::Pop(ptr.clone()))
+        Instruction::Stack(StackOp::PushPtr(ptr)),
+        Instruction::Stack(StackOp::Pop(ptr_ptr.clone()))
     ];
 
     let mut stack = Stack::new();
@@ -443,6 +462,6 @@ fn main() {
         instruction.run(&mut stack);
     }
 
-    println!("ptr output value: {:?}", ptr);
+    println!("ptr output value: {:?}", ptr_ptr);
 
 }
