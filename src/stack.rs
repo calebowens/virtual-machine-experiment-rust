@@ -18,8 +18,8 @@ impl Stack {
         Stack { stacks: vec![Rc::new(RefCell::new(vec![]))] }
     }
 
-    pub fn current(&mut self) -> SubStack {
-        self.stacks.last_mut().unwrap().clone()
+    pub fn current(&self) -> SubStack {
+        self.stacks.last().unwrap().clone()
     }
 
     pub fn substack(&mut self, carry_count: usize) {

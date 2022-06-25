@@ -21,22 +21,22 @@ pub enum Numeric {
 
 macro_rules! impl_math {
     ($name:ident, $op:tt) => {
-        pub fn $name(&self, rhs: &Self) -> Self {
+        pub fn $name(&self, rhs: &Self) -> Option<Value> {
             match (self, rhs) {
-                (Numeric::UInt8(a),   Numeric::UInt8(b)  ) => Numeric::UInt8(a $op b),
-                (Numeric::UInt16(a),  Numeric::UInt16(b) ) => Numeric::UInt16(a $op b),
-                (Numeric::UInt32(a),  Numeric::UInt32(b) ) => Numeric::UInt32(a $op b),
-                (Numeric::UInt64(a),  Numeric::UInt64(b) ) => Numeric::UInt64(a $op b),
-                (Numeric::UInt128(a), Numeric::UInt128(b)) => Numeric::UInt128(a $op b),
-                (Numeric::Int8(a),    Numeric::Int8(b)   ) => Numeric::Int8(a $op b),
-                (Numeric::Int16(a),   Numeric::Int16(b)  ) => Numeric::Int16(a $op b),
-                (Numeric::Int32(a),   Numeric::Int32(b)  ) => Numeric::Int32(a $op b),
-                (Numeric::Int64(a),   Numeric::Int64(b)  ) => Numeric::Int64(a $op b),
-                (Numeric::Float32(a), Numeric::Float32(b)) => Numeric::Float32(a $op b),
-                (Numeric::Float64(a), Numeric::Float64(b)) => Numeric::Float64(a $op b),
-                (Numeric::USize(a),   Numeric::USize(b)  ) => Numeric::USize(a $op b),
-                (Numeric::ISize(a),   Numeric::ISize(b)  ) => Numeric::ISize(a $op b),
-                _ => panic!("LHS and RHS not matching")
+                (Numeric::UInt8(a),   Numeric::UInt8(b)  ) => Some(Value::Numeric(Numeric::UInt8(a $op b))),
+                (Numeric::UInt16(a),  Numeric::UInt16(b) ) => Some(Value::Numeric(Numeric::UInt16(a $op b))),
+                (Numeric::UInt32(a),  Numeric::UInt32(b) ) => Some(Value::Numeric(Numeric::UInt32(a $op b))),
+                (Numeric::UInt64(a),  Numeric::UInt64(b) ) => Some(Value::Numeric(Numeric::UInt64(a $op b))),
+                (Numeric::UInt128(a), Numeric::UInt128(b)) => Some(Value::Numeric(Numeric::UInt128(a $op b))),
+                (Numeric::Int8(a),    Numeric::Int8(b)   ) => Some(Value::Numeric(Numeric::Int8(a $op b))),
+                (Numeric::Int16(a),   Numeric::Int16(b)  ) => Some(Value::Numeric(Numeric::Int16(a $op b))),
+                (Numeric::Int32(a),   Numeric::Int32(b)  ) => Some(Value::Numeric(Numeric::Int32(a $op b))),
+                (Numeric::Int64(a),   Numeric::Int64(b)  ) => Some(Value::Numeric(Numeric::Int64(a $op b))),
+                (Numeric::Float32(a), Numeric::Float32(b)) => Some(Value::Numeric(Numeric::Float32(a $op b))),
+                (Numeric::Float64(a), Numeric::Float64(b)) => Some(Value::Numeric(Numeric::Float64(a $op b))),
+                (Numeric::USize(a),   Numeric::USize(b)  ) => Some(Value::Numeric(Numeric::USize(a $op b))),
+                (Numeric::ISize(a),   Numeric::ISize(b)  ) => Some(Value::Numeric(Numeric::ISize(a $op b))),
+                _ => None
             }
         }
     }
@@ -45,22 +45,22 @@ macro_rules! impl_math {
 
 macro_rules! impl_cmp {
     ($name:ident, $op:tt) => {
-        pub fn $name(&self, rhs: &Self) -> Value {
+        pub fn $name(&self, rhs: &Self) -> Option<Value> {
             match (self, rhs) {
-                (Numeric::UInt8(a),   Numeric::UInt8(b)  ) => Value::Bool(a $op b),
-                (Numeric::UInt16(a),  Numeric::UInt16(b) ) => Value::Bool(a $op b),
-                (Numeric::UInt32(a),  Numeric::UInt32(b) ) => Value::Bool(a $op b),
-                (Numeric::UInt64(a),  Numeric::UInt64(b) ) => Value::Bool(a $op b),
-                (Numeric::UInt128(a), Numeric::UInt128(b)) => Value::Bool(a $op b),
-                (Numeric::Int8(a),    Numeric::Int8(b)   ) => Value::Bool(a $op b),
-                (Numeric::Int16(a),   Numeric::Int16(b)  ) => Value::Bool(a $op b),
-                (Numeric::Int32(a),   Numeric::Int32(b)  ) => Value::Bool(a $op b),
-                (Numeric::Int64(a),   Numeric::Int64(b)  ) => Value::Bool(a $op b),
-                (Numeric::Float32(a), Numeric::Float32(b)) => Value::Bool(a $op b),
-                (Numeric::Float64(a), Numeric::Float64(b)) => Value::Bool(a $op b),
-                (Numeric::USize(a),   Numeric::USize(b)  ) => Value::Bool(a $op b),
-                (Numeric::ISize(a),   Numeric::ISize(b)  ) => Value::Bool(a $op b),
-                _ => panic!("LHS and RHS not matching")
+                (Numeric::UInt8(a),   Numeric::UInt8(b)  ) => Some(Value::Bool(a $op b)),
+                (Numeric::UInt16(a),  Numeric::UInt16(b) ) => Some(Value::Bool(a $op b)),
+                (Numeric::UInt32(a),  Numeric::UInt32(b) ) => Some(Value::Bool(a $op b)),
+                (Numeric::UInt64(a),  Numeric::UInt64(b) ) => Some(Value::Bool(a $op b)),
+                (Numeric::UInt128(a), Numeric::UInt128(b)) => Some(Value::Bool(a $op b)),
+                (Numeric::Int8(a),    Numeric::Int8(b)   ) => Some(Value::Bool(a $op b)),
+                (Numeric::Int16(a),   Numeric::Int16(b)  ) => Some(Value::Bool(a $op b)),
+                (Numeric::Int32(a),   Numeric::Int32(b)  ) => Some(Value::Bool(a $op b)),
+                (Numeric::Int64(a),   Numeric::Int64(b)  ) => Some(Value::Bool(a $op b)),
+                (Numeric::Float32(a), Numeric::Float32(b)) => Some(Value::Bool(a $op b)),
+                (Numeric::Float64(a), Numeric::Float64(b)) => Some(Value::Bool(a $op b)),
+                (Numeric::USize(a),   Numeric::USize(b)  ) => Some(Value::Bool(a $op b)),
+                (Numeric::ISize(a),   Numeric::ISize(b)  ) => Some(Value::Bool(a $op b)),
+                _ => None
             }
         }
     }

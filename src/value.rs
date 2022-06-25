@@ -32,11 +32,11 @@ pub enum ValueType {
 }
 
 impl ValueType {
-    pub fn to_value(&self, last_stack_value: Value) -> Value {
+    pub fn to_value(&self, last_stack_value: Option<&Value>) -> Option<Value> {
         match self {
-            ValueType::Ptr(ptr) => ptr.value.borrow().clone(),
-            ValueType::Value(value) => value.clone(),
-            ValueType::StackValue => last_stack_value
+            ValueType::Ptr(ptr) => ptr.value.try_borrow().ok().map(|value| value.clone()),
+            ValueType::Value(value) => Some(value.clone()),
+            ValueType::StackValue => last_stack_value.cloned()
         }
     }
 }
