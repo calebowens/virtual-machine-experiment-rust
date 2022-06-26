@@ -24,7 +24,7 @@ impl Typed for Value {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ValueType {
     Ptr(Ptr),
     Value(Value),

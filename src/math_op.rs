@@ -12,7 +12,7 @@ pub enum MathOp {
     LessThan,
     GreaterThanEq,
     LessThanEq,
-    Eql,
+    Eql
 }
 
 fn push_to_stack(value: Option<Value>, current_stack: &mut Vec<Value>) -> InstructionResult {

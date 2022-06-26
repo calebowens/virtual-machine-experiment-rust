@@ -80,6 +80,8 @@ impl FunctionController {
                                                     .expect("Invalid function address used")
                                                     .param_count);
 
+                                println!("{:?} {}", self.stack, address);
+
                                 self.context.push(Rc::new(RefCell::new(RuntimeContext::new(address))));
 
                                 continue 'runtime_loop;

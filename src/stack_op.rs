@@ -9,6 +9,7 @@ use crate::cast_to_value;
 pub enum StackOp {
     Swap,
     Duplicate,
+    Drop,
     Pop(Ptr),
     Push(ValueType),
     PushPtr(Ptr),
@@ -40,12 +41,12 @@ impl Runnable for StackOp {
                 }
             },
             StackOp::Duplicate => {
-                let imut_current_stack = current_stack.borrow();
+                let mut current_stack = current_stack.borrow_mut();
 
-                let last_element = imut_current_stack.last();
+                let last_element = current_stack.last().cloned();
 
                 if let Some(last_element) = last_element {
-                    current_stack.borrow_mut().push(last_element.clone());
+                    current_stack.push(last_element.clone());
 
                     InstructionResult::None
                 } else {
@@ -63,6 +64,11 @@ impl Runnable for StackOp {
                     InstructionResult::Error(InstructionError::new("No item on stack to pop"))
                 }
 
+            },
+            StackOp::Drop => {
+                current_stack.borrow_mut().pop();
+
+                InstructionResult::None
             },
             StackOp::Push(value) => {
                 let value = value.to_value(current_stack.borrow().last());
