@@ -80,8 +80,6 @@ impl FunctionController {
                                                     .expect("Invalid function address used")
                                                     .param_count);
 
-                                println!("{:?} {}", self.stack, address);
-
                                 self.context.push(Rc::new(RefCell::new(RuntimeContext::new(address))));
 
                                 continue 'runtime_loop;
@@ -89,7 +87,7 @@ impl FunctionController {
                         }
                     },
                     InstructionResult::Error(error) => {
-                        panic!("Error: '{}' occoured at instruction {}, {:?}", error.message, current_context.current_instruction, current_fn.instructions[current_context.current_instruction])
+                        panic!("Error: '{}' \nOccoured at instruction {}, {:?}, fn {}\n With stack {:?}", error.message, current_context.current_instruction, current_fn.instructions[current_context.current_instruction], current_context.current_fn, self.stack)
                     }
                 }
             }

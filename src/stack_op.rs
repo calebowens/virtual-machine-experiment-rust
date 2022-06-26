@@ -16,7 +16,8 @@ pub enum StackOp {
     DeRef,
     SubStack(ValueType),
     Destack(ValueType),
-    Len
+    Len,
+    Inspect,
 }
 
 
@@ -127,6 +128,11 @@ impl Runnable for StackOp {
             },
             StackOp::Len => { 
                 current_stack.borrow_mut().push(Value::Numeric(Numeric::USize(current_stack.borrow().len())));
+
+                InstructionResult::None
+            },
+            StackOp::Inspect => {
+                println!("Inspect: {:?}", current_stack);
 
                 InstructionResult::None
             }
